@@ -1,0 +1,12 @@
+---
+
+- name: include var files
+  include_vars:
+    name: '{{ item }}'
+  loop:
+    - vars.yml
+    - passwords.yml
+
+- name: include task file
+  include: shinken.yml
+  tags: shinken

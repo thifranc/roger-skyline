@@ -1,0 +1,7 @@
+prod:
+  db:
+    name: 'roger'
+    user: 'roger_cli'
+    password: '{{ vlt.prod.db.password }}'
+    host: '{{ hosts.db-master.hostname }}.{{ domain.name }}.{{ domain.extension }}'
+    port: '5432'

@@ -1,0 +1,39 @@
+
+- name: install pip
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  loop:
+    - python-setuptools
+    - python-pip
+
+- name: install ssl required package for selfsigned
+  pip:
+    name: pyOpenSSL
+    state: present
+
+
+- name: Ensure directory exists for local self-signed TLS certs.
+  file:
+    path: /etc/ssl/{{ hostname }}
+    state: directory
+
+- name: Generate an OpenSSL private key.
+  openssl_privatekey:
+    path: /etc/ssl/{{ hostname }}/{{ hostname }}.{{ domain.name }}.{{ domain.extension }}.key
+
+- name: Generate an OpenSSL CSR.
+  openssl_csr:
+    path: /etc/ssl/{{ hostname }}/{{ hostname }}.{{ domain.name }}.{{ domain.extension }}.csr
+    privatekey_path: /etc/ssl/{{ hostname }}/{{ hostname }}.{{ domain.name }}.{{ domain.extension }}.key
+    CN: '{{ hostname }}.{{ domain.name }}.{{ domain.extension }}'
+    C: '{{ country_code }}'
+
+- name: Generate a Self Signed OpenSSL certificate.
+  openssl_certificate:
+    path: /etc/ssl/{{ hostname }}/{{ hostname }}.{{ domain.name }}.{{ domain.extension }}.crt
+    privatekey_path: /etc/ssl/{{ hostname }}/{{ hostname }}.{{ domain.name }}.{{ domain.extension }}.key
+    csr_path: /etc/ssl/{{ hostname }}/{{ hostname }}.{{ domain.name }}.{{ domain.extension }}.csr
+    provider: selfsigned
+

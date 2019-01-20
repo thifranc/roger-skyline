@@ -1,0 +1,4 @@
+gitlab:
+  ldap:
+    uid: gitlab
+    password: "{{ vlt.gitlab.ldap.password }}"

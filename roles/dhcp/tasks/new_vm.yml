@@ -1,0 +1,17 @@
+---
+
+- name: add entry in dhcp
+  tags: new_vm
+  become: true
+  when: "'dhcp' in inventory_hostname"
+  blockinfile:
+    marker: "#{mark} this block allow IP for {{ vm_name }}"
+    path: /etc/dhcp/dhcpd.conf
+    block: |
+      host {{ vm_name }} {
+        hardware ethernet {{ vm_mac }};
+        fixed-address 10.81.0.{{ vm_ip }};
+        option host-name "{{ vm_name }}";
+      }
+  notify: restart dhcp
+

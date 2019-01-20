@@ -1,0 +1,6 @@
+db_setup:
+  name: 'roger'
+  user: 'roger_cli'
+  password: '{{ vlt.db_setup.password }}'
+  host: 'localhost'
+  port: '5432'

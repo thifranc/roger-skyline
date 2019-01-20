@@ -1,0 +1,37 @@
+
+- name: "install classic packages"
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  loop:
+    - curl
+    - openssh-server
+    - ca-certificates
+
+- name: "Curl gitlab + Setup"
+  shell: "curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh | bash"
+
+- name: "install gitlab-ee"
+  shell: 'EXTERNAL_URL="http://{{ hosts.gitlab.hostname }}.{{ domain.name }}.{{ domain.extension }}" apt-get install -y gitlab-ee'
+
+- name: "template config file"
+  template:
+    src: gitlab.rb
+    dest: /etc/gitlab/gitlab.rb
+    mode: '0644'
+  notify: reconfigure gitlab
+
+- name: "Copy ldap CA file"
+  copy:
+    src: ldap_CA.pem
+    dest: /etc/gitlab/trusted-certs/
+  notify: reconfigure gitlab
+
+- name: include SSL role
+  include_role:
+    name: ssl
+#- name: "Copy SSL dir + files"
+#  copy:
+#    src: ssl/
+#    dest: /etc/gitlab

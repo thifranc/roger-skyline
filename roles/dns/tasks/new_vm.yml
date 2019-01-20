@@ -1,0 +1,24 @@
+---
+
+- name: add entry in forward dns
+  tags: new_vm
+  become: true
+  when: "'dns' in inventory_hostname"
+  blockinfile:
+    marker: ";{mark} add forward {{ vm_name }}"
+    path: /etc/bind/zones/pseudo.moi
+    block: |
+      {{ vm_name }}     IN  A 10.81.0.{{ vm_ip }}
+  notify: restart bind9
+
+- name: add entry in reverse dns
+  tags: new_vm
+  become: true
+  when: "'dns' in inventory_hostname"
+  blockinfile:
+    marker: ";{mark} add reverse {{ vm_name }}"
+    path: /etc/bind/zones/reverse/0.81.10.in-addr.arpa.db
+    block: |
+      {{ vm_ip }}     IN  PTR {{ vm_name }}.pseudo.moi.
+  notify: restart bind9
+

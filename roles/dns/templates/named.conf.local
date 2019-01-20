@@ -1,0 +1,19 @@
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "{{ domain.name }}.{{ domain.extension }}" {
+     type master;
+	 allow-transfer {};
+     file "/etc/bind/zones/{{ domain.name }}.{{ domain.extension }}";
+};
+
+zone "{{ dns.reverse_subnet }}.in-addr.arpa" {
+     type master;
+	 allow-transfer {};
+     file "/etc/bind/zones/reverse/{{ dns.reverse_subnet }}.in-addr.arpa.db";
+};

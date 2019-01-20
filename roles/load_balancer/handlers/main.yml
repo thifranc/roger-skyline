@@ -1,0 +1,13 @@
+---
+
+- name: "restart nginx"
+  listen:  "restart nginx"
+  service:
+    name: nginx
+    state: restarted
+
+- name: "restart keepalived"
+  listen:  "restart keepalived"
+  service:
+    name: keepalived
+    state: restarted

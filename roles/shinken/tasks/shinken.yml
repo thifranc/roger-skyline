@@ -1,0 +1,160 @@
+- name: Install basic packages
+  apt:
+    state: latest
+    name: '{{ item }}'
+    install_recommends: no
+  loop:
+    - python-pycurl
+    - python-setuptools
+    - python-cherrypy3
+    - python-pip
+    - mongodb
+    - curl
+    - python-ldap
+    - build-essential
+    - libnet-ldap-perl
+    - libio-socket-ssl-perl
+    - nginx
+
+- name: install pip package
+  pip:
+    name: '{{ item }}'
+  loop:
+    - requests
+    - arrow
+    - bottle #CHECK VERSION IF ANY PB
+    - pymongo
+    - passlib
+
+- name: clone shinken repository
+  git:
+    repo: https://github.com/naparuba/shinken.git
+    dest: /root/shinken
+    clone: yes
+
+- name: fix bug cf https://github.com/shinken-monitoring/mod-webui/issues/618
+  shell: 'curl -L https://github.com/naparuba/shinken/pull/1971.diff | patch -p1'
+  args:
+    chdir: /root/shinken
+
+- name: Add shinken user
+  user:
+    name: shinken
+    groups: sudo
+    shell: /bin/zsh
+
+- name: Python exec install shinken
+  command: /usr/bin/python setup.py install
+  args:
+    chdir: /root/shinken
+
+- name: init shinken
+  become_user: shinken
+  command: shinken --init
+
+- name: install shinken modules
+  become_user: shinken
+  command: /usr/bin/shinken install '{{ item }}'
+  loop:
+    - webui2
+    - auth-active-directory
+
+- name: unarchive nagios
+  unarchive:
+    src: nagios-plugins-2.2.1.tar.gz
+    dest: /home/shinken/
+    owner: shinken
+    group: shinken
+
+- name: run configure
+  become_user: shinken
+  command: ./configure --with-nagios-user=shinken --with-nagios-group=shinken
+  args:
+    chdir: /home/shinken/nagios-plugins-2.2.1
+
+- name: make install
+  make:
+    chdir: /home/shinken/nagios-plugins-2.2.1
+    target: install
+
+- name: create ssh dir
+  become_user: shinken
+  file:
+    state: directory
+    path: /home/shinken/.ssh
+
+- name: copy ssh public key to shinken user
+  copy:
+    src: authorized_keys
+    dest: /home/shinken/.ssh/authorized_keys
+    owner: shinken
+    group: shinken
+
+- name: chown for nagios
+  file:
+    path: /usr/local/nagios/
+    owner: shinken
+    group: shinken
+    recurse: yes
+
+- name: copy conf files
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dst }}'
+    owner: shinken
+    group: shinken
+  loop:
+    - { src: broker-master.cfg, dst: /etc/shinken/brokers/broker-master.cfg }
+    - { src: paths.cfg, dst: /etc/shinken/resource.d/paths.cfg }
+    - { src: webui2.cfg, dst: /etc/shinken/modules/webui2.cfg }
+    - { src: commands/, dst: /etc/shinken/commands/ }
+  notify: "restart shinken"
+
+- name: include role ssl
+  include_role:
+    name: ssl
+
+- name: template conf files
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dst }}'
+    owner: shinken
+    group: shinken
+  loop:
+    - { src: admin.cfg, dst: /etc/shinken/contacts/admin.cfg }
+    - { src: hosts/, dst: /etc/shinken/hosts/ }
+    - { src: commands/, dst: /etc/shinken/commands/ }
+    - { src: contacts/pseudo.cfg, dst: /etc/shinken/contacts/pseudo.cfg }
+    - { src: auth_active_directory.cfg, dst: /etc/shinken/modules/auth_active_directory.cfg }
+    - { src: nginx_default_site.conf, dst: /etc/nginx/sites-available/default }
+  notify: restart nginx
+
+- name: copy check files
+  copy:
+    src: check/
+    dest: /usr/local/nagios/libexec/
+    mode: 0755
+    owner: shinken
+    group: shinken
+  notify: "restart shinken"
+
+  #- name: Create ssl directory in Nginx
+  #  file:
+  #    path: /etc/nginx/ssl/
+  #    state: directory
+  #
+  #- name: copy SSL files
+  #  copy:
+  #    src: '{{ item.src }}'
+  #    dest: '{{ item.dest }}'
+  #    mode: '{{ item.mode }}'
+  #  loop:
+  #    - { src: ssl/shinken.crt, dest: /etc/nginx/ssl/, mode: '0644' }
+  #    - { src: ssl/shinken.key, dest: /etc/nginx/ssl/, mode: '0600' }
+  #  notify: restart nginx
+
+- name: Add shinken to bootable services
+  service:
+    name: shinken
+    enabled: yes
+

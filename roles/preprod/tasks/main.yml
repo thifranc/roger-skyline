@@ -1,0 +1,97 @@
+- name: "install basic packages"
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  loop:
+    - python-pip
+    - postgresql
+    - postgresql-contrib
+    - postgresql-client
+    - gunicorn
+
+- name: "Create .ssh directory"
+  file:
+    path: /root/.ssh/
+    state: directory
+
+- name: "Copy ssh key file"
+  copy:
+    src: id_rsa
+    dest: /root/.ssh/id_rsa
+    mode: 0600
+
+    #- name: "Copy SSL files"
+    #  copy:
+    #    src: '{{ item.src }}'
+    #    dest: /etc/ssl/private/
+    #    mode: '{{ item.mode }}'
+    #  loop:
+    #    - { src: preprod.crt, mode: '0644' }
+    #    - { src: preprod.key, mode: '0600' }
+
+- name: include SSL role
+  include_role:
+    name: ssl
+
+- name: "Create /var/www"
+  file:
+    path: /var/www
+    state: directory
+
+- name: "Git clone repo"
+  git:
+    repo: ssh://git@{{ hosts.gitlab.hostname }}.{{ domain.name }}.{{ domain.extension }}:4222/pseudo/crud_users.git
+    dest: /var/www/crud_users
+    clone: yes
+    accept_hostkey: yes
+    key_file: /root/.ssh/id_rsa
+    version: preprod
+
+- name: "Install pip requirements"
+  pip:
+    requirements: /var/www/crud_users/requirements.txt
+
+- name: "template file to set app as a service"
+  template:
+    src: crud_users.service
+    dest: /etc/systemd/system/crud_users.service
+  notify: "restart app"
+
+- name: "Enable app as service"
+  service:
+    name: crud_users.service
+    enabled: yes
+
+- name: "Copy postgresql conf files"
+  copy:
+    src: postgresql.conf
+    dest: /etc/postgresql/9.6/main
+    mode: '0644'
+  notify: "restart psql"
+
+- name: "template postgresql conf files"
+  template:
+    src: pg_hba.conf
+    dest: /etc/postgresql/9.6/main
+    mode: '0644'
+  notify: "restart psql"
+
+- name: "template config file for preprod"
+  template:
+    src: config.py
+    dest: /var/www/crud_users/config.py
+
+- name: "copy migration scripts"
+  copy:
+    src: migration_app.sh
+    dest: /root/
+
+- name: "template migration scripts"
+  template:
+    src: migration_db.sh
+    dest: /root/
+
+- name: Include db_setup role
+  include_role:
+    name: db_setup

@@ -1,0 +1,57 @@
+- name: "install basic packages"
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  loop:
+    - python-pip
+    - gunicorn
+
+- name: "Install pip package for ansible-pg"
+  pip:
+    name: psycopg2
+
+- name: "Create .ssh directory"
+  file:
+    path: /root/.ssh/
+    state: directory
+
+- name: "Copy ssh key file"
+  copy:
+    src: id_rsa
+    dest: /root/.ssh/id_rsa
+    mode: 0600
+
+- name: "Create /var/www"
+  file:
+    path: /var/www
+    state: directory
+
+- name: "Git clone repo"
+  git:
+    repo: 'ssh://git@{{ hosts.gitlab.hostname }}.{{ domain.name }}.{{ domain.extension }}:4222/pseudo/crud_users.git'
+    dest: /var/www/crud_users
+    clone: yes
+    accept_hostkey: yes
+    key_file: /root/.ssh/id_rsa
+    version: master
+
+- name: "Install pip requirements"
+  pip:
+    requirements: /var/www/crud_users/requirements.txt
+
+- name: "Copy file to set app as a service"
+  copy:
+    src: crud_users.service
+    dest: /etc/systemd/system/crud_users.service
+  notify: "restart app"
+
+- name: "Enable app as service"
+  service:
+    name: crud_users.service
+    enabled: yes
+
+- name: "template config file for prod"
+  template:
+    src: config.py
+    dest: /var/www/crud_users/config.py

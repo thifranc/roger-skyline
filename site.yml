@@ -1,0 +1,22 @@
+---
+
+-   hosts: all
+    become: yes
+    become_user: root
+    become_method: sudo
+    roles:
+      - { role: common, tags: common }
+      - { role: gateway }
+      - { role: dhcp }
+      - { role: dns }
+      - { role: ldap }
+      - { role: mail }
+      - { role: gitlab }
+      - { role: load_balancer }
+      - { role: preprod, tags: preprod }
+      - { role: prod, tags: prod }
+      - { role: db }
+      - { role: shinken }
+      - { role: db_setup, tags: db }
+      - { role: backup, tags: backup }
+      - { role: vpn, tags: vpn }

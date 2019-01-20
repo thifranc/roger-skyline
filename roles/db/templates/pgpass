@@ -1,0 +1,1 @@
+{{ db.host }}:{{ db.port }}:{{ db.name }}:{{ db.user }}:{{ db.password }}

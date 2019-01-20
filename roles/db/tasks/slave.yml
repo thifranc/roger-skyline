@@ -1,0 +1,72 @@
+---
+
+- name: install basic packages
+  apt:
+    state: latest
+    install_recommends: no
+    name: '{{ item }}'
+  loop:
+    - postgresql-9.6
+    - python-pip
+
+- name: "Install psycopg2"
+  pip: 
+    name: psycopg2-binary
+
+- name: copy config files
+  copy:
+    src: postgres/slave/
+    dest: /etc/postgresql/9.6/main/
+  notify: "restart psql"
+
+- name: template config files
+  template:
+    src: postgres/slave/
+    dest: /etc/postgresql/9.6/main/
+  notify: "restart psql"
+
+- name: create ssh directory
+  file:
+    state: directory
+    path: /var/lib/postgresql/.ssh
+
+- name: copy ssh postgres pv key
+  copy:
+    src: ssh/slave.pv
+    dest: /var/lib/postgresql/.ssh/id_rsa
+  notify: "restart psql"
+
+- name: copy ssh master public key
+  copy:
+    src: ssh/master.pub
+    dest: /var/lib/postgresql/.ssh/authorized_keys
+  notify: "restart psql"
+
+- name: clear data directory
+  file:
+    state: absent
+    path: /var/lib/postgresql/9.6/main/
+
+- name: copy master files
+  command: pg_basebackup -h {{ hosts.db-master.hostname }} -D /var/lib/postgresql/9.6/main -U {{ db.users.replication.user }} --xlog-method=stream
+  environment:
+    PGPASSWORD: '{{ db.users.replication.password }}'
+  notify: "restart psql"
+
+- name: template recovery file
+  template:
+    src: recovery.conf
+    dest: /var/lib/postgresql/9.6/main/recovery.conf
+  notify: "restart psql"
+
+- name: chown for postgres user
+  file:
+    dest: /var/lib/postgresql
+    owner: postgres
+    group: postgres
+    recurse: yes
+  notify: "restart psql"
+
+- name: Include db_setup role
+  include_role:
+    name: db_setup

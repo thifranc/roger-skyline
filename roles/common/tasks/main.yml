@@ -1,0 +1,92 @@
+---
+# This playbook contains common plays that will be run on all nodes.
+
+- name: install basic packages
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  with_items:
+    - zsh
+    - git
+    - vim
+    - rsync
+
+- name: Clone Vundle
+  git:
+    repo: https://github.com/VundleVim/Vundle.vim.git
+    dest: '{{ ansible_env.HOME }}/.vim/bundle/Vundle.vim'
+    version: master
+
+- name: Cloning Oh My Zsh
+  git:
+    repo: https://github.com/robbyrussell/oh-my-zsh
+    dest: '{{ ansible_env.HOME }}/.oh-my-zsh'
+
+- name: Add default + backup user
+  user:
+    name: '{{ item.user }}'
+    home: '{{ item.home }}'
+    shell: /bin/zsh
+    groups: sudo
+  loop:
+    - { user: thifranc, home: /home/thifranc }
+    - { user: backup, home: /home/backup }
+
+- name: Set authorized key
+  authorized_key:
+    user: '{{ item.user }}'
+    key: "{{ lookup('file', '{{ item.key }}') }}"
+    state: present
+  loop:
+    #- { user: root, key: id_rsa.pub }
+    - { user: thifranc, key: thifranc.pub }
+    - { user: backup, key: backup.pub }
+
+- name: Unset root authorized key
+  tags: unset
+  authorized_key:
+    user: '{{ item.user }}'
+    key: "{{ lookup('file', '{{ item.key }}') }}"
+    state: absent
+  loop:
+    - { user: root, key: id_rsa.pub }
+
+- name: Copy vimrc to dest
+  copy:
+    src: vimrc
+    dest:  '{{ ansible_env.HOME }}/.vimrc'
+
+- name: Copy zshrc to dest
+  copy:
+    src: zshrc
+    dest:  '{{ ansible_env.HOME }}/.zshrc'
+
+- name: Install Vundle Plugins
+  ignore_errors: yes
+  shell: vim -E -s -c 'source {{ ansible_env.HOME }}/.vimrc' -c PluginInstall -c qall
+
+- name: Set zsh as default shell
+  user:
+    name: root
+    shell: /bin/zsh
+
+- name: change hostname to var passed
+  hostname:
+    name: '{{ hostname }}'
+
+- name: change hosts
+  become: true
+  lineinfile:
+    path: /etc/hosts
+    regexp: 'debian-template|{{ domain.name }}.{{ domain.extension }}'
+    line: '127.0.1.1    {{ hostname }}.{{ domain.name }}.{{ domain.extension }}     {{ hostname }}'
+    backup: yes
+
+- name: Copy ssh config
+  copy:
+    src: sshd_config
+    dest: /etc/ssh/sshd_config
+    mode: '0644'
+  notify: "restart ssh"
+

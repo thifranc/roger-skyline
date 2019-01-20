@@ -1,0 +1,13 @@
+---
+
+- name: "restart app"
+  listen:  "restart app"
+  service:
+    name: crud_users.service
+    state: restarted
+
+- name: "restart psql"
+  listen:  "restart psql"
+  service:
+    name: postgresql
+    state: restarted

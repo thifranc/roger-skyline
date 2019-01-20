@@ -1,0 +1,17 @@
+---
+
+- name: include vars
+  tags: ldap,debug
+  include_vars: '{{ item }}'
+  loop:
+    - vars.yml
+    - passwords.yml
+
+- name: debug vars
+  tags: debug
+  debug:
+    msg: "{{ ldap }}"
+
+- name: include task file
+  tags: ldap
+  include: ldap.yml

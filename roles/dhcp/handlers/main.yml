@@ -1,0 +1,27 @@
+---
+# handlers
+#
+- name: restart dhcp
+  listen: "restart dhcp"
+  service:
+    name: isc-dhcp-server
+    state: restarted
+
+- name: restart networking
+  listen: "restart networking"
+  service:
+    name: networking
+    state: restarted
+
+- name: restart
+  command: 'sleep 1 && shutdown -r now "Reboot triggered by Ansible" && sleep 1'
+  async: 1
+  poll: 0
+  #ignore_errors: true
+
+- name: wait for restart
+  wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 5
+    timeout: 60

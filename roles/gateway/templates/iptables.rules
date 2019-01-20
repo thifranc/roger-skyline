@@ -1,0 +1,32 @@
+*nat
+
+# special rules -----------
+
+# use UDP protocol
+-A PREROUTING -i {{ gateway.nic.name }} -p udp -m udp --dport 53 -j DNAT --to-destination {{ hosts.dns.ip }}:53
+-A PREROUTING -i {{ gateway.nic.name }} -p udp -m udp --dport 1194 -j DNAT --to-destination {{ hosts.vpn.ip }}:1194
+
+# virtual ip
+-A PREROUTING -i {{ gateway.nic.name }} -p tcp -m tcp --dport 4242 -j DNAT --to-destination {{ network.virtual_ipaddress }}:443
+
+# end of special rules ------------
+
+{% for key, host in hosts.iteritems() %}
+{% if host.ports is defined %}
+{% for port in host.ports %}
+-A PREROUTING -i {{ gateway.nic.name }} -p tcp -m tcp --dport {{ port.src }} -j DNAT --to-destination {{ host.ip }}:{{ port.dst }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+-A POSTROUTING -o {{ gateway.nic.name }} -j MASQUERADE
+COMMIT
+
+*filter
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -i {{ gateway.nic.name }} -p tcp -m tcp --dport 4222 -j ACCEPT
+-A INPUT -i {{ gateway.nic.name }} -j DROP
+
+-A FORWARD -i {{ gateway.nic.name }} -p tcp -d {{ network.CIDR }} -j ACCEPT
+COMMIT

@@ -1,0 +1,3 @@
+dns:
+  reverse_subnet: 0.81.10
+  mx: '{{ hosts.mail.hostname }}'

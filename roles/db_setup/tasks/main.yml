@@ -1,0 +1,46 @@
+---
+
+- name: install basic packages
+  apt:
+    state: latest
+    install_recommends: no
+    name: python-pip
+
+- name: "Install psycopg2"
+  pip: 
+    name: psycopg2-binary
+
+- name: "template pgpass file"
+  template:
+    src: pgpass
+    dest: /root/.pgpass
+    mode: 0600
+
+- name: "Copy sql setup file"
+  copy:
+    src: crud_app_setup.sql
+    dest: /root/
+
+- name: "Be sure that psql runs"
+  service:
+    name: postgresql
+    state: restarted
+
+- name: "Create psql database"
+  become: yes
+  become_user: postgres
+  postgresql_db:
+    name: '{{ db_setup.name }}'
+
+- name: "Create psql user"
+  become: yes
+  become_user: postgres
+  postgresql_user:
+    db: '{{ db_setup.name }}'
+    name: '{{ db_setup.user }}'
+    password: '{{ db_setup.password }}'
+
+- name: "Init DB"
+  command: psql -f /root/crud_app_setup.sql -h localhost -U {{ db_setup.user }} -d {{ db_setup.name }}
+  environment:
+    PGPASSFILE: /root/.pgpass

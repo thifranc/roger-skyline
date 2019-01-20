@@ -1,0 +1,5 @@
+dhcp:
+  nic: ens192
+  range:
+    low: '{{ network.cutted }}200' 
+    high: '{{ network.cutted }}250'

@@ -1,0 +1,62 @@
+---
+
+- name: install useful packages
+  apt:
+    state: latest
+    install_recommends: no
+    name: '{{ item }}'
+  loop:
+    - openvpn
+    - openvpn-auth-ldap
+
+- name: create dir
+  file:
+    state: directory
+    path: /etc/openvpn/auth
+
+- name: Create Iptables NAT chain
+  iptables:
+    table: nat
+    chain: POSTROUTING
+    out_interface: ens192
+    jump: MASQUERADE
+
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+    reload: True
+
+- name: copy conf files
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}' 
+  loop:
+    - { src: auth-ldap.conf, dest: /etc/openvpn/auth/auth-ldap.conf }
+    - { src: server.conf, dest: /etc/openvpn/server.conf }
+  notify: "restart vpn"
+
+- name: copy key files
+  copy:
+    src: '{{ item }}'
+    dest: /etc/openvpn
+    mode: 0600
+  loop:
+    - dh.pem
+    - ca.crt
+    - server.crt
+    - server.req
+    - server.key
+    - ta.key
+  notify: "restart vpn"
+  
+- name: copy helping script to create client configs
+  copy:
+    src: client-configs/
+    dest: /root/
+
+- name: copy ldap_CA.pem
+  copy:
+    src: ldap_CA.pem
+    dest: /home/thifranc/

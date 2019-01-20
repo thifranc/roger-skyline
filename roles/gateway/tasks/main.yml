@@ -1,0 +1,23 @@
+---
+#  File to set up a Gateway 
+#  This is a tmp file as NIC config has to be done manually so far
+#
+
+- name: include vars
+  tags: gateway
+  include_vars: vars.yml
+
+- name: debug
+  tags: gateway
+  debug:
+    msg: '{{ gateway }}'
+
+- name: include task file
+  tags: new_vm
+  include: new_vm.yml
+
+- name: include task file
+  tags: gateway
+  include: gateway.yml
+
+

@@ -1,0 +1,5 @@
+---
+
+- name: include task file
+  include: gitlab.yml
+  tags: gitlab

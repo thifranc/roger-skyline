@@ -1,0 +1,11 @@
+---
+# This playbook contains network plays that will be run for dhcp nodes.
+
+- name: include task file
+  tags: new_vm
+  include: new_vm.yml
+
+- name: include task file
+  tags: dhcp
+  include: dhcp.yml
+

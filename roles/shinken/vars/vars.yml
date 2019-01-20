@@ -1,0 +1,21 @@
+dhcp:
+  nic: ens192
+mail:
+  ldap:
+    pseudo:
+      user: pseudo
+      password: '{{ vlt.mail.ldap.pseudo.password }}'
+db:
+  name: roger
+  user: roger_cli
+  password: '{{ vlt.db.password }}'
+ldap:
+  shinken:
+    user: gitlab
+    password: '{{ vlt.ldap.shinken.password }}'
+  pseudo:
+    user: pseudo
+    password: '{{ vlt.mail.ldap.pseudo.password }}'
+shinken:
+  admin:
+    password: '{{ vlt.shinken.admin.password }}'

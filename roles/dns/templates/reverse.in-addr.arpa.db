@@ -1,0 +1,20 @@
+;
+; BIND data file for {{ network.address }}-255
+;
+
+$TTL 604800
+
+@       IN      SOA     dns.{{ domain.name }}.{{ domain.extension }}. root.{{ domain.name }}.{{ domain.extension }}. (
+				1         ; Serial
+				604800         ; Refresh
+				86400         ; Retry
+				2419200         ; Expire
+				604800       ; Default TTL
+)
+
+		IN	NS	dns.{{ domain.name }}.{{ domain.extension }}.
+
+
+{% for key, host in hosts.iteritems() %}
+{{ host.id }}		IN	PTR	{{ host.hostname }}.{{ domain.name }}.{{ domain.extension }}
+{% endfor %}

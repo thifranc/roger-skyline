@@ -1,0 +1,51 @@
+---
+
+- name: Install basic packages
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  with_items:
+    - bind9
+    - bind9-doc
+    - dnsutils
+
+- name: Template DNS conf to dest
+  template:
+    src: named.conf.local
+    dest: /etc/bind/named.conf.local
+
+- name: Template resolv conf file
+  template:
+    src: resolv.conf
+    dest: /etc/
+
+  #dns should not query nameservers from dhcp
+  #so we modified this file
+- name: Copy dhclient.conf file
+  copy:
+    src: dhclient.conf
+    dest: /etc/dhcp/
+
+- name: Ensures /etc/bind/zones/ dir exists
+  file:
+    path: /etc/bind/zones
+    state: directory
+
+- name: template FORWARD DNS conf to dest
+  template:
+    src: forward
+    dest: '/etc/bind/zones/{{ domain.name }}.{{ domain.extension }}'
+  notify:
+    - restart bind9
+
+- name: Ensures /etc/bind/zones/reverse dir exists
+  file:
+    path: /etc/bind/zones/reverse
+    state: directory
+
+- name: template REVERSE DNS conf to dest
+  template:
+    src: reverse.in-addr.arpa.db
+    dest: '/etc/bind/zones/reverse/{{ dns.reverse_subnet }}.in-addr.arpa.db'
+

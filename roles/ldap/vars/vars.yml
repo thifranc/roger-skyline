@@ -1,0 +1,11 @@
+ldap:
+  base: 'dc={{ domain.name }},dc={{ domain.extension }}'
+  admin:
+    dn: 'cn=admin,dc={{ domain.name }},dc={{ domain.extension }}'
+    password: '{{ vlt.ldap.admin.password }}'
+  people:
+    - { login: pseudo, firstname: thibault, lastname: francois, password: '{{ vlt.ldap.people.pseudo.password }}'  }
+    # apps to add : gitlab ldap postfix dovecot shinken etc ...
+  apps:
+    - { login: gitlab, firstname: gitlab, lastname: gitlab, password: '{{ vlt.ldap.apps.gitlab.password }}'  }
+

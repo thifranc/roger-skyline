@@ -1,0 +1,155 @@
+- name: "install classic packages"
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  loop:
+    - postfix
+    - postfix-pcre
+    - postfix-ldap
+    - mutt
+    - swaks
+    - dovecot-core
+    - dovecot-imapd
+    - dovecot-pop3d
+    - dovecot-lmtpd
+    - dovecot-ldap
+    - spamassassin
+    - spamc
+
+- name: "Enable spamassassin to start at boot"
+  service:
+    name: spamassassin
+    enabled: yes
+
+- name: "Add ssl-cert group"
+  user:
+    name: "{{ item }}"
+    groups:
+      - "{{ item  }}"
+      - ssl-cert
+  loop:
+    - postfix
+    - dovecot
+
+- name: "Add vmail group"
+  group:
+    gid: 5000
+    system: yes
+    name: vmail
+
+- name: "Add spamassassin group"
+  group:
+    gid: 5555
+    system: yes
+    name: spamd
+
+- name: "Add vmail user"
+  user:
+    name: vmail
+    home: /srv/vmail
+    uid: 5000
+    group: vmail
+    system: yes
+
+- name: "Add spamassassin user"
+  user:
+    name: spamd
+    home: /usr/local/spamassassin
+    uid: 5555
+    group: vmail
+    system: yes
+
+
+- name: "Create SSL directory"
+  file:
+    path: /etc/ssl/private
+    state: directory
+
+- name: "copy CA files"
+  copy:
+    src: ldap_CA.pem
+    dest: /etc/ldap/ldap_CA.pem
+    group: ssl-cert
+
+    #- name: "copy SSL files"
+    #  copy:
+    #    src: ssl/
+    #    dest: /etc/ssl/private/
+    #    mode: 0640
+
+- name: include role ssl
+  include_role:
+    name: ssl
+
+- name: "copy postfix files"
+  copy:
+    src: postfix/
+    dest: /etc/postfix/
+  notify: restart postfix
+
+- name: "template postfix files"
+  template:
+    src: '{{ item }}'
+    dest: /etc/postfix/
+  loop:
+     - 'postfix/identitycheck.pcre'
+     - 'postfix/ldap_virtual_aliases.cf'
+     - 'postfix/ldap_virtual_recipients.cf'
+     - 'postfix/main.cf'
+     - 'postfix/virtual_domains'
+
+  notify: restart postfix
+
+- name: "hash virtual_domains postfix"
+  command: "postmap hash:/etc/postfix/virtual_domains"
+  notify: restart postfix
+
+- name: "check file exists"
+  stat:
+    path: /etc/postfix/virtual_domains.db
+  register: stat_result
+  notify: restart postfix
+
+
+- name: "copy dovecot 10-conf files"
+  copy:
+    src: dovecot/conf/
+    dest: /etc/dovecot/conf.d/
+  notify: restart dovecot
+
+- name: "template dovecot 10-conf files"
+  template:
+    src: dovecot/conf/10-ssl.conf
+    dest: /etc/dovecot/conf.d/
+  notify: restart dovecot
+
+- name: "template dovecot ldap conf files"
+  template:
+    src: dovecot/dovecot-ldap.conf.ext
+    dest: /etc/dovecot/
+  notify: restart dovecot
+
+
+- name: "Setup spamassassin directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    group: spamd
+    owner: spamd
+  loop:
+    - /usr/local/spamassassin
+    - /usr/local/spamassassin/log
+  notify: restart spamassassin
+
+- name: "Copy spamassassin conf"
+  copy:
+    src: spamassassin/local.cf
+    dest: /etc/spamassassin/local.cf
+  notify: restart spamassassin
+
+  #- name: "Copy sudoers file"
+  #  copy:
+  #    src: sudoers
+  #    dest: /etc/sudoers
+  #    mode: '0440'

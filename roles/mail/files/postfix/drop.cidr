@@ -1,0 +1,4 @@
+# IP/CIDR			Action
+
+#10.81.0.0/24			REJECT Blacklisted
+10.22.0.0/24			REJECT Blacklisted

@@ -1,0 +1,7 @@
+---
+
+- name: "restart vpn"
+  listen:  "restart vpn"
+  service:
+    name: openvpn
+    state: restarted

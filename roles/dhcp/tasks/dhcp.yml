@@ -1,0 +1,37 @@
+
+- name: Install basic packages
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  with_items:
+    - isc-dhcp-server
+
+- name: Template DHCP conf to dest
+  template:
+    src: dhcpd.conf
+    dest: /etc/dhcp/dhcpd.conf
+  notify:
+    - restart dhcp
+    #could be a template ideally -> hey nice idea man
+
+- name: Template NIC conf to dest
+  template:
+    src: nic.cf
+    dest: /etc/network/interfaces
+  notify:
+    - restart networking
+      # old version
+      #- restart
+      #- wait for restart
+
+- name: Copy ssh-dsa key
+  copy:
+    src: ssh_key/
+    dest: /etc/ssh/
+
+- name: Set Interfaces of DHCP server
+  copy:
+    content: "INTERFACESv4=\"{{ dhcp.nic }}\""
+    #{{ GOOD NIC VAR }} you were on fire that day bro
+    dest: /etc/default/isc-dhcp-server

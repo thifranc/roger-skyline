@@ -1,0 +1,15 @@
+[Unit]
+Description = App Python CRUD on psql DB
+After = postgresql.service
+StartLimitBurst=50
+
+[Service]
+User = root
+Group = root
+WorkingDirectory=/var/www/crud_users
+ExecStart = /usr/bin/gunicorn crud:app -b 0.0.0.0:80
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy = multi-user.target

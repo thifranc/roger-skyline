@@ -1,0 +1,30 @@
+#!/bin/bash
+# We get the variables by running as:
+# /root/scripts/newuser.sh Firstname Lastname username passwd
+# for reference:           $1        $2       $3       $4
+#
+# Set the LDAP admin password so it is not plaintext and not in .bash_history 
+#read -p "Enter the password for the LDAP administrator: " PASSWD
+# This variable is set as $PASSWD
+#
+# First start by creating the ldif file for the user and 
+# placing it in /root/ldap/newusers
+
+DN="uid=$3,{{ ldap.base }}"
+ADMIN_DN="cn=admin,{{ ldap.base }}"
+
+echo "dn: $DN
+objectClass: top
+objectClass: person
+objectClass: shadowAccount
+objectClass: inetOrgPerson
+cn: $1 $2
+sn: $2
+uid: $3
+ou: people
+mail: $3@{{ domain.name }}.{{ domain.extension }}" > /root/newusers/$3.ldif
+
+ldapadd -D $ADMIN_DN -w "{{ ldap.admin.password }}" -x -v -f /root/newusers/$3.ldif
+
+ldappasswd -s $4 -w "{{ ldap.admin.password }}" -D $ADMIN_DN -x "$DN"
+

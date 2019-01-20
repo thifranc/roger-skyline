@@ -1,0 +1,45 @@
+---
+
+- name: install packages
+  apt:
+    state: latest
+    name: postgresql-client
+    install_recommends: no
+
+- name: add cron jobs
+  cron:
+    day: '*'
+    hour: '{{ item.hour }}'
+    job: '{{ item.job }}'
+  loop:
+    - { hour: 20, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.dhcp.hostname }}:\\{/etc/dhcp/dhcpd.conf,/etc/network/interfaces,/etc/default/isc-dhcp-server\\} /root/dhcp" }
+    - { hour: 21, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.dns.hostname }}:\\{/etc/bind/named.conf.local,/etc/bind/zones/reverse,/etc/bind/zones\\} /root/dns" }
+    - { hour: 22, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.ldap.hostname }}:\\{/etc/ldap/ldap.conf,/var/lib/ldap\\} /root/ldap" }
+    - { hour: 23, job: "rsync --rsync-path=\"sudo rsync\" -av -e 'ssh -p 4222' backup@{{ hosts.mail.hostname }}:\\{/srv/vmail,/etc/spamassassin/local.cf,/etc/dovecot/conf.d/,/etc/postfix/\\} /root/mail" }
+    - { hour: 0, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.gitlab.hostname }}:/etc/gitlab/gitlab.rb /root/gitlab" }
+    - { hour: 1, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.nginx.hostname }}:/etc/nginx/sites-available/default /root/nginx" }
+    - { hour: 2, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.preprod.hostname }}:/var/www/crud_users /root/preprod" }
+    - { hour: 3, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.prod.hostname }}:/var/www/crud_users /root/prod" }
+    - { hour: 4, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.shinken.hostname }}:\\{/etc/shinken/contacts,/etc/shinken/modules/,/etc/shinken/brokers/broker-master.cfg,/etc/shinken/hosts/,/etc/shinken/commands/,/etc/shinken/resource.d/paths.cfg,/etc/shinken/modules/webui2.cfg\\} /root/shinken" }
+    - { hour: 5, job: "rsync -av -e 'ssh -p 4222' backup@{{ hosts.gateway.hostname }}:\\{/etc/iptables.rules,/etc/sysctl.conf,/etc/network/interfaces\\} /root/gateway" }
+    - { hour: 6, job: "pg_dump -C -h {{ hosts.db-master.hostname }} -U roger_cli -d roger > /root/master_db.dump" }
+
+
+- name: add cron env var for DB
+  cron:
+    env: yes
+    name: PGPASSWORD
+    value: '{{ backup.db.password }}'
+
+- name: add ssh private key
+  copy:
+    src: backup
+    dest: /root/.ssh/id_rsa
+    mode: '0600'
+
+#this step is used to prevent host key checking when backup connects up to servers
+- name: copy ssh config
+  copy:
+    src: ssh.conf
+    dest: /root/.ssh/config
+    mode: '0644'

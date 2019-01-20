@@ -1,0 +1,26 @@
+
+pg_hba files avec des ips
+recovery.conf
+postgres.conf
+
+vérifier bien les files des DBs
+
+LDAP test le notify restart ne marche pas, cf avec gitlab auth ca passait pa
+
+
+
+postfix/mail.cf : line about certificate authority ??
+
+new_vm role left as is so far
+
+
+reboot did not work for gateway (had to co to reboot by hand)
+
+dhcp restart networking changed
+
+still some things not automated :
+1) first VM : configure ansible user with sudo without password
+2) DHCP does not have internet by default so can't contact gateway etc
+3) DNS had his own ip has default dns, he should get 8.8.8.8 or he won't be able to resolve any domain names, modify its /etc/dhcp/dhclient.conf file ?
+
+4) ldap some pb about "/usr/bin/ldapmodify -H ldapi:// -Y EXTERNAL -f /root/addcerts.ldif" + startTLS (needed to do it by hand)

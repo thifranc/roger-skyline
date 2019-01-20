@@ -1,0 +1,159 @@
+---
+
+#bash scripts/loop_add_user.sh scripts/resources/staff_member.txt scripts/add_user.sh
+
+- name: install basic packages
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  loop:
+    - slapd
+    - ldap-utils
+    - ldapscripts
+    - gnutls-bin
+    - ssl-cert
+
+- name: configure slapd package
+  debconf:
+    name: slapd
+    question: "{{ item.question }}"
+    value: "{{ item.value }}"
+    vtype: "{{ item.vtype }}"
+  loop:
+    - { question: 'slapd/password1', value: '{{ ldap.admin.password }}', vtype: 'password' }
+    - { question: 'slapd/internal/generated_adminpw', value: '{{ ldap.admin.password }}', vtype: 'password' }
+    - { question: 'slapd/internal/adminpw', value: '{{ ldap.admin.password }}', vtype: 'password' }
+    - { question: 'slapd/password2', value: '{{ ldap.admin.password }}', vtype: 'password' }
+    - { question: 'slapd/backend', value: 'MDB', vtype: 'string' }
+    - { question: 'shared/organization', value: '{{ domain.name }}.{{ domain.extension }}', vtype: 'string' }
+    - { question: 'slapd/move_old_database', value: true, vtype: 'boolean' }
+    - { question: 'slapd/no_configuration', value: false, vtype: 'boolean' }
+    - { question: 'slapd/purge_database', value: true, vtype: 'boolean' }
+    - { question: 'slapd/domain', value: '{{ domain.name }}.{{ domain.extension }}', vtype: 'string' }
+
+
+- name: replace admin password parce que ca marche pas c'est l'ordi qui a tort
+  lineinfile: 
+    path: /etc/ldap/slapd.d/cn=config/olcDatabase={1}mdb.ldif
+    regexp: '^olcRootPW'
+    line: 'olcRootPW: {SSHA}zWJeg+aSV1wsSCSJnIC9dE9sUmbKW1Sg'
+    backrefs: yes
+
+- name: allow ldaps in etc default slapd config
+  lineinfile: 
+    path: /etc/default/slapd
+    regexp: '^SLAPD_SERVICES'
+    line: 'SLAPD_SERVICES="ldaps:/// ldap:/// ldapi:///"'
+    backrefs: yes
+  notify: restart slapd
+
+- name: restart service
+  service:
+    name: slapd
+    state: restarted
+
+- name: create dir for scripts
+  file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - /root/scripts
+    - /root/newusers
+
+- name: template script files
+  template:
+    src: "{{ item }}.j2"
+    dest: '/root/scripts/{{ item }}.sh'
+  loop:
+    - add_app
+    - add_user
+
+- name: template ldif client conf
+  template:
+    src: ldap.conf
+    dest: /etc/ldap/ldap.conf
+
+- name: create all users
+  become: true
+  shell:  "/bin/bash /root/scripts/add_user.sh {{ item['firstname'] }} {{ item['lastname'] }} {{ item['login'] }} {{ item['password'] }}"
+  loop: '{{ ldap.people }}'
+
+- name: create all apps
+  become: true
+  shell: "/bin/bash /root/scripts/add_app.sh {{ item['firstname'] }} {{ item['lastname'] }} {{ item['login'] }} {{ item['password'] }}"
+  loop: '{{ ldap.apps }}'
+
+  #BEGIN SSL SPECIAL LDAP THING
+
+- name: ensure dir exists
+  file:
+    path: '/etc/ssl/{{ hosts.ldap.hostname }}'
+    state: directory
+
+- name: copy CA files
+  copy:
+    src: '{{ item.name }}'
+    mode: '{{ item.mode }}'
+    dest:  '/etc/ssl/{{ hosts.ldap.hostname }}/'
+  loop:
+    - { name: ca_server.conf, mode: '0644' }
+    - { name: ca_server.pem, mode: '0644' }
+    - { name: ca_server.key, mode: '0600' }
+
+- name: template SSL conf
+  template:
+    src: ssl_server.conf
+    dest: '/etc/ssl/{{ hosts.ldap.hostname }}/{{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.conf'
+
+- name: create SSL key
+  command: '/usr/bin/certtool -p --sec-param high --outfile {{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.key'
+  args:
+    chdir: '/etc/ssl/{{ hosts.ldap.hostname }}'
+
+- name: create SSL pem
+  command: '/usr/bin/certtool -c --load-privkey {{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.key --load-ca-certificate ca_server.pem --load-ca-privkey ca_server.key --template {{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.conf --outfile {{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.pem'
+  args:
+    chdir: '/etc/ssl/{{ hosts.ldap.hostname }}'
+
+  #END SSL SPECIAL LDAP THING
+
+- name: template ldif file to set certs
+  template:
+    src: addcerts.ldif
+    dest: /root/
+
+- name: template ldif client conf
+  template:
+    src: ldap.conf
+    dest: /etc/ldap/ldap.conf
+
+- name: copy ldif mail conf
+  copy:
+    src: index_mail.ldif
+    dest: /root/
+
+- name: execute ldif mail conf
+  # ignore because errors if already exists
+  ignore_errors: yes
+  shell: "/usr/bin/ldapadd -H ldapi:// -Y EXTERNAL -f /root/index_mail.ldif"
+
+- name: add ssl-cert to ldap group
+  user:
+    name: openldap
+    groups: ssl-cert
+
+- name: ssl-cert owns ldap key
+  file:
+    path: /etc/ssl/{{ hosts.ldap.hostname }}/{{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.key
+    group: ssl-cert
+    mode: 0640
+
+- name: set certs
+  become: true
+  # ignore because 
+  # if already set, should replace add by replace in file
+  # addcerts.ldif
+  ignore_errors: yes
+  shell: "/usr/bin/ldapmodify -H ldapi:// -Y EXTERNAL -f /root/addcerts.ldif"
+  notify: restart slapd

@@ -1,0 +1,4 @@
+vpn:
+  ldap:
+    user: 'ldap'
+    password: '{{ vlt.vpn.ldap.password }}'

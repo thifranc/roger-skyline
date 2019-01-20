@@ -1,0 +1,8 @@
+ssh_key/
+site.retry
+roles/ldap/files/ldap_server.key
+*.swp
+*.swo
+grepB
+grepC
+passwords.yml

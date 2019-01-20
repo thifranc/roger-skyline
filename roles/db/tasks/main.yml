@@ -1,0 +1,9 @@
+---
+
+- name: include master file
+  include: master.yml
+  tags: db_master
+
+- name: include slave file
+  include: slave.yml
+  tags: db_slave

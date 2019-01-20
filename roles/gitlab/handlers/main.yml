@@ -1,0 +1,7 @@
+---
+# handlers
+#
+- name: reconfigure gitlab
+  listen: "reconfigure gitlab"
+  command: "/usr/bin/gitlab-ctl reconfigure"
+

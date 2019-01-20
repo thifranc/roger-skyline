@@ -1,0 +1,7 @@
+ldap:
+  dovecot:
+    user: 'dovecot'
+    password: '{{ vlt.ldap.dovecot.password }}'
+  postfix:
+    user: 'postfix'
+    password: '{{ vlt.ldap.postfix.password }}'

@@ -1,0 +1,10 @@
+dn: cn=config
+changetype: modify
+add: olcTLSCACertificateFile
+olcTLSCACertificateFile: /etc/ssl/{{ hosts.ldap.hostname }}/{{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.pem
+-
+add: olcTLSCertificateFile
+olcTLSCertificateFile: /etc/ssl/{{ hosts.ldap.hostname }}/{{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.pem
+-
+add: olcTLSCertificateKeyFile
+olcTLSCertificateKeyFile: /etc/ssl/{{ hosts.ldap.hostname }}/{{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}.key

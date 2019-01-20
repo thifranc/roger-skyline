@@ -1,0 +1,22 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+pre-up iptables-restore < /etc/iptables.rules
+
+# The primary network interface
+allow-hotplug {{ gateway.nic.name }}
+iface {{ gateway.nic.name }} inet dhcp
+
+# The second network interface
+allow-hotplug {{ gateway.nic2.name }}
+iface {{ gateway.nic2.name }} inet static
+address {{ network.gateway }}
+netmask {{ network.netmask }}
+network {{ network.address }}
+broadcast {{ network.broadcast }}
+

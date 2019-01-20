@@ -1,0 +1,13 @@
+workers:
+  - worker-1
+  - worker-2
+slave:
+  priority: 100
+  name: BACKUP
+  nic: ens192
+master:
+  priority: 200
+  name: MASTER
+  nic: ens192
+virtual_ip:
+  password: "{{ vlt.virtual_ip.password }}"

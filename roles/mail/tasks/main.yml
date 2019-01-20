@@ -1,0 +1,12 @@
+---
+
+- name: include vars
+  tags: mail
+  include_vars: '{{ item }}'
+  loop:
+    - vars.yml
+    - passwords.yml
+
+- name: include task file
+  include: mail.yml
+  tags: mail

@@ -1,0 +1,139 @@
+country_code: 'FR'
+production:
+  virtual_ip: 42
+domain:
+  name: pseudo #slash16
+  extension: moi #com
+network:
+  cutted: 10.81.0.
+  virtual_ipaddress: 10.81.0.42
+  CIDR: 10.81.0.0/24
+  gateway: 10.81.0.254
+  dhcp: 10.81.0.253
+  dns: 10.81.0.252
+  address: 10.81.0.0
+  subnet: 10.81.0.0
+  broadcast: 10.81.0.255
+  netmask: 255.255.255.0
+hosts:
+  gateway:
+    hostname: 'gateway'
+    mac: '00:50:56:b3:a2:1f'
+    ip: '10.81.0.254'
+    id: '254'
+  dhcp:
+    hostname: 'dhcp'
+    mac: '00:50:56:b4:9e:2f'
+    ip: '10.81.0.253'
+    id: '253'
+  dns:
+    hostname: 'dns'
+    mac: '00:50:56:b4:f1:65'
+    ip: '10.81.0.252'
+    id: '252'
+    ports:
+      - { src: 4252, dst: 4222 }
+      - { src: 53, dst: 53 }
+  client:
+    hostname: 'client'
+    mac: '00:50:56:b3:5f:18'
+    ip: '10.81.0.1'
+    id: '1'
+    ports:
+      - { src: 4001, dst: 4222 }
+  ldap:
+    hostname: 'ldap'
+    mac: '00:50:56:b4:ae:f3'
+    ip: '10.81.0.2'
+    id: '2'
+    ports:
+      - { src: 4002, dst: 4222 }
+  mail:
+    hostname: 'mail'
+    mac: '00:50:56:b4:6d:eb'
+    ip: '10.81.0.3'
+    id: '3'
+    ports:
+      - { src: 4003, dst: 4222 }
+  gitlab:
+    hostname: 'gitlab'
+    mac: '00:50:56:b4:d8:fc'
+    ip: '10.81.0.4'
+    id: '4'
+    ports:
+      - { src: 4004, dst: 4222 }
+      - { src: 4444, dst: 443 }
+  nginx:
+    hostname: 'nginx'
+    mac: '00:50:56:b3:be:b1'
+    ip: '10.81.0.5'
+    id: '5'
+    ports:
+      - { src: 4005, dst: 4222 }
+      - { src: 4555, dst: 443 }
+  preprod:
+    hostname: 'preprod'
+    mac: '00:50:56:b4:04:c7'
+    ip: '10.81.0.6'
+    id: '6'
+    ports:
+      - { src: 4006, dst: 4222 }
+      - { src: 4666, dst: 443 }
+  shinken:
+    hostname: 'shinken'
+    mac: '00:50:56:b3:31:5d'
+    ip: '10.81.0.11'
+    id: '11'
+    ports:
+      - { src: 4011, dst: 4222 }
+      - { src: 4777, dst: 443 }
+  backup:
+    hostname: 'backup'
+    mac: '00:50:56:b4:16:2f'
+    ip: '10.81.0.12'
+    id: '12'
+    ports:
+      - { src: 4012, dst: 4222 }
+  vpn:
+    hostname: 'vpn'
+    mac: '00:50:56:b4:8c:45'
+    ip: '10.81.0.13'
+    id: '13'
+    ports:
+      - { src: 4013, dst: 4222 }
+      - { src: 1194, dst: 1194 }
+  db-master:
+    hostname: 'db-master'
+    mac: '00:50:56:b3:4f:29'
+    ip: '10.81.0.7'
+    id: '7'
+    ports:
+      - { src: 4007, dst: 4222 }
+  db-slave:
+    hostname: 'db-slave'
+    mac: '00:50:56:b3:af:c0'
+    ip: '10.81.0.8'
+    id: '8'
+    ports:
+      - { src: 4008, dst: 4222 }
+  worker-1:
+    hostname: 'worker-1'
+    mac: '00:50:56:b3:70:63'
+    ip: '10.81.0.9'
+    id: '9'
+    ports:
+      - { src: 4009, dst: 4222 }
+  worker-2:
+    hostname: 'worker-2'
+    mac: '00:50:56:b3:36:6b'
+    ip: '10.81.0.10'
+    id: '10'
+    ports:
+      - { src: 4010, dst: 4222 }
+  nginx-slave:
+    hostname: 'nginx-slave'
+    mac: '00:50:56:b4:70:ee'
+    ip: '10.81.0.14'
+    id: '14'
+    ports:
+      - { src: 4014, dst: 4222 }

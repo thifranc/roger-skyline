@@ -1,0 +1,24 @@
+---
+
+- name: add prerouting in iptables.conf
+  become: true
+  when: "'gateway' in inventory_hostname"
+  blockinfile:
+    marker: "#{mark} this line will ------- preroute {{ vm_name }}"
+    path: /etc/iptables.rules
+    insertbefore: "MASQUERADE"
+    content: |
+      -A PREROUTING -i ens192 -p tcp -m tcp --dport 40{{ vm_ip }} -j DNAT --to-destination 10.81.0.{{ vm_ip }}:4222
+  notify: restore iptables
+
+- name: add forwarding in iptables.conf
+  become: true
+  when: "'gateway' in inventory_hostname"
+  blockinfile:
+    marker: "#{mark} this line will ------- forward {{ vm_name }}"
+    path: /etc/iptables.rules
+    insertbefore: "^COMMIT$"
+    block: |
+      -A FORWARD -i ens192 -p tcp -m tcp -d 10.81.0.{{ vm_ip }} --dport 4222 -j ACCEPT
+  notify: restore iptables
+

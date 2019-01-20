@@ -1,0 +1,8 @@
+bind = yes
+bind_dn = uid={{ ldap.postfix.user }},dc={{ domain.name }},dc={{ domain.extension }}
+bind_pw = {{ ldap.postfix.password }}
+server_host = ldaps://{{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}:636
+search_base = dc={{ domain.name }},dc={{ domain.extension }}
+domain = {{ domain.name }}.{{ domain.extension }}
+query_filter = (mail=%s)
+result_attribute = mail

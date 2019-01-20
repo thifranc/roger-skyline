@@ -1,0 +1,21 @@
+hosts = {{ hosts.ldap.hostname }}.{{ domain.name }}.{{ domain.extension }}
+tls = yes
+tls_ca_cert_file = /etc/ldap/ldap_CA.pem
+
+debug_level = -1
+
+ldap_version = 3
+base = dc={{ domain.name }},dc={{ domain.extension }}
+scope = subtree
+
+auth_bind = yes
+dn = uid={{ ldap.dovecot.user }},dc={{ domain.name }},dc={{ domain.extension }}
+dnpass = {{ ldap.dovecot.password }}
+
+user_attrs = mailHomeDirectory=home,mailUidNumber=uid,mailGidNumber=gid,mailStorageDirectory=mail
+user_filter = (&(objectClass=PostfixBookMailAccount)(uid=%n))
+pass_attrs = uid=user,userPassword=password
+pass_filter = (&(objectClass=PostfixBookMailAccount)(uid=%n))
+
+default_pass_scheme = SSHA
+

@@ -1,0 +1,50 @@
+- name: "Install basic packages"
+  tags: 'lb'
+  apt:
+    name: '{{ item }}'
+    state: latest
+    install_recommends: no
+  loop:
+    - nginx
+    - keepalived
+
+- name: "Enable services"
+  service:
+    name: '{{ item }}'
+    enabled: yes
+  loop:
+    - nginx
+    - keepalived
+
+      #- name: "Copy SSL files"
+      #  tags: 'lb'
+      #  copy:
+      #    src: ssl/
+      #    dest: /etc/nginx/ssl
+      #  notify: restart nginx
+
+- name: include SSL role
+  include_role:
+    name: ssl
+
+- name: "template nginx conf file"
+  tags: 'lb'
+  template:
+    src: nginx.conf
+    dest: /etc/nginx/sites-available/default
+  notify: restart nginx
+
+- name: "template master keepalive file"
+  tags: 'lb_master'
+  template:
+    src: keepalived_master.conf
+    dest: /etc/keepalived/keepalived.conf
+  notify: restart keepalived
+
+- name: "template slave keepalive file"
+  tags: 'lb_slave'
+  template:
+    src: keepalived_slave.conf
+    dest: /etc/keepalived/keepalived.conf
+  notify: restart keepalived
+
